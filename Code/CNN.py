@@ -1,11 +1,14 @@
-from keras.utils import np_utils
-from keras.models import Sequential
-from keras.layers import Dense, Conv1D, MaxPooling1D, Dropout, Flatten, GlobalMaxPooling1D
-
+import tensorflow as tf
 import numpy as np
-from sklearn.metrics import accuracy_score, precision_score, recall_score
 
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 from load_data import LoadData_slice
+from keras.utils import np_utils
+# =============================================================================
+# from keras.models import Sequential
+# from keras.layers import Dense, Conv1D, MaxPooling1D, Dropout, Flatten, GlobalMaxPooling1D
+# =============================================================================
+
 
 ##################################################################
 ## model 구성하기 ##
@@ -22,23 +25,24 @@ total_recall = []
 
 for subject in range(subjects):
 
-    model = Sequential()
-    model.add(Conv1D(filters=4, kernel_size=5, strides=1, activation='relu', kernel_initializer ='he_normal', input_shape=(170,1)))
-    model.add(MaxPooling1D(pool_size=2))
-    model.add(Conv1D(filters=8, kernel_size=5, strides=1, activation='relu',kernel_initializer ='he_normal'))
-    model.add(MaxPooling1D(pool_size=2))
-    model.add(Conv1D(filters=16, kernel_size=5, strides=1, activation='relu',kernel_initializer ='he_normal'))
-    model.add(MaxPooling1D(pool_size=2))
-    model.add(Conv1D(filters=16, kernel_size=5, strides=1, activation='relu',kernel_initializer ='he_normal'))
+    inputs = tf.keras.Input(shape = (170, 1))
+    conv_1 = tf.keras.layers.Conv1D(filters=4, kernel_size=5, strides=1, activation='relu', kernel_initializer ='he_normal')(inputs)
+    max_1 = tf.keras.layers.MaxPool1D(2)(conv_1) 
+    conv_2 = tf.keras.layers.Conv1D(filters=8, kernel_size=5, strides=1, activation='relu',kernel_initializer ='he_normal')(max_1) 
+    max_2 = tf.keras.layers.MaxPool1D(2)(conv_2)
+    conv_3 = tf.keras.layers.Conv1D(filters=16, kernel_size=5, strides=1, activation='relu',kernel_initializer ='he_normal')(max_2) 
+    max_3 = tf.keras.layers.MaxPool1D(2)(conv_3) 
+    conv_4 = tf.keras.layers.Conv1D(filters=16, kernel_size=5, strides=1, activation='relu',kernel_initializer ='he_normal')(max_3) 
 
-    model.add(GlobalMaxPooling1D(data_format='channels_last'))
+    G_max_1 = tf.keras.layers.GlobalMaxPooling1D(data_format='channels_last')(conv_4) 
 
-    model.add(Dense(32, activation='tanh',kernel_initializer ='he_normal'))
-    model.add(Dense(2, activation='softmax',kernel_initializer ='he_normal'))
+    den_1 = tf.keras.layers.Dense(32, activation='tanh',kernel_initializer ='he_normal')(G_max_1) 
+    den_2 = tf.keras.layers.Dense(2, activation='softmax',kernel_initializer ='he_normal')(den_1) 
 
     #####################################################################
     ## 학습에 대한 설정 ##
 
+    model = tf.keras.models.Model(inputs = inputs, outputs = den_2)
     model.compile(loss='binary_crossentropy',
                   optimizer='sgd',
                   metrics=['accuracy'])
